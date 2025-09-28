@@ -1,0 +1,48 @@
+name: attendance
+description: "A Flutter attendance tracking app integrated with Node.js backend."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+
+  # Networking & State
+  http: ^1.2.2
+  provider: ^6.1.2
+
+  # Storage
+  shared_preferences: ^2.3.2
+  flutter_secure_storage: ^9.2.2
+
+  # Date & Time
+  intl: ^0.19.0
+
+  # UI Enhancement
+  curved_navigation_bar: ^1.0.3
+  jwt_decoder: ^2.0.1
+  geolocator: ^10.0.0
+  flutter_svg: ^2.0.7
+  bootstrap_icons: ^1.11.3
+  slide_to_act: ^2.0.2
+  syncfusion_flutter_charts: ^30.2.6+1
+  flutter_native_timezone: ^2.0.0
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
