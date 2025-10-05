@@ -12,11 +12,11 @@ import '../models/leave.dart';
 
 class ApiService {
   static const String baseUrl =
-      "http://localhost:5001/api"; // Android emulator; sesuaikan
+      "https://attendance-service-production-3488.up.railway.app/api";
   static String? token;
   static String? userId;
   static String? companyCode;
-  static String? deviceTimezone; // <-- cache TZ
+  static String? deviceTimezone;
 
   static Future<void> loadSession() async {
     final prefs = await SharedPreferences.getInstance();

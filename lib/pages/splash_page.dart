@@ -36,7 +36,7 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.fingerprint, size: 100, color: Colors.blue),
+            Icon(Icons.location_on_outlined, size: 100, color: Colors.blue),
             SizedBox(height: 20),
             Text(
               "Attendance App",
