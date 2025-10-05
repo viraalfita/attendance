@@ -2,7 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,7 +30,8 @@ class ApiService {
 
   static Future<String?> _getLocalTimezoneSafe() async {
     try {
-      return await FlutterNativeTimezone.getLocalTimezone(); // contoh: "Asia/Jakarta"
+      final TimezoneInfo tz = await FlutterTimezone.getLocalTimezone();
+      return tz.identifier;
     } catch (e) {
       debugPrint('[ApiService] getLocalTimezone error: $e');
       return null;
