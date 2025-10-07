@@ -26,16 +26,14 @@ class _HistoryPageState extends State<HistoryPage> {
   final ScrollController _dateScrollController = ScrollController();
 
   // konfigurasi
-  static const int _daysToShow = 7; // ubah sesuai kebutuhan
-  static const double _dateItemWidth =
-      68.0; // lebar item + margin kanan (60 + 8)
+  static const int _daysToShow = 7;
+  static const double _dateItemWidth = 72.0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
 
-    // setelah frame selesai, coba scroll ke posisi hari ini.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToTodayWithRetry();
     });
@@ -111,9 +109,7 @@ class _HistoryPageState extends State<HistoryPage> {
     }).toList();
   }
 
-  // coba scroll ke "today" dengan retry singkat kalau maxScrollExtent belum siap
   Future<void> _scrollToTodayWithRetry({int attempt = 0}) async {
-    // batas retry untuk menghindari loop tak berujung
     const int maxAttempts = 6;
     const Duration retryDelay = Duration(milliseconds: 100);
 
@@ -127,18 +123,15 @@ class _HistoryPageState extends State<HistoryPage> {
     }
 
     final maxExtent = _dateScrollController.position.maxScrollExtent;
-    // index hari ini = last item
     final int todayIndex = _daysToShow - 1;
     final double rawOffset = todayIndex * _dateItemWidth;
     final double target = rawOffset > maxExtent ? maxExtent : rawOffset;
 
-    // kalau maxExtent masih 0, coba lagi beberapa kali
     if (maxExtent == 0 && attempt < maxAttempts) {
       await Future.delayed(retryDelay);
       return _scrollToTodayWithRetry(attempt: attempt + 1);
     }
 
-    // lakukan animate/jump
     if (target <= 0) {
       _dateScrollController.jumpTo(0);
     } else {
@@ -149,20 +142,17 @@ class _HistoryPageState extends State<HistoryPage> {
           curve: Curves.easeOut,
         );
       } catch (_) {
-        // fallback ke jumpTo kalau animateTo gagal
         _dateScrollController.jumpTo(target);
       }
     }
   }
 
-  // saat user tap tanggal, kita center-kan item tersebut untuk UX lebih baik
   void _onDateTap(int index, DateTime date) {
     setState(() {
       _selectedDate = date;
       _filteredRecords = _filterRecordsByDate(date);
     });
 
-    // center target index
     if (!_dateScrollController.hasClients) return;
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -181,82 +171,143 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final total = _onTimeCount + _lateCount;
+    final onTimePercentage = total > 0 ? (_onTimeCount / total * 100) : 0;
+    final latePercentage = total > 0 ? (_lateCount / total * 100) : 0;
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: buildCustomAppBar(title: "Attendance History", centerTitle: true),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            )
           : Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Donut Chart
-                  Card(
-                    color: AppColors.selectedBg,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.primary, width: 0.5),
+                  // Statistics Card dengan gradient yang lebih modern
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.blue.shade300, Colors.blue.shade500],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: SizedBox(
-                              height: 150,
-                              child: SfCircularChart(
-                                series: <CircularSeries>[
-                                  DoughnutSeries<ChartData, String>(
-                                    dataSource: [
-                                      ChartData(
-                                        'On Time',
-                                        _onTimeCount,
-                                        Colors.green,
-                                      ),
-                                      ChartData('Late', _lateCount, Colors.red),
-                                    ],
-                                    xValueMapper: (ChartData data, _) => data.x,
-                                    yValueMapper: (ChartData data, _) => data.y,
-                                    pointColorMapper: (ChartData data, _) =>
-                                        data.color,
-                                    innerRadius: '70%',
-                                    dataLabelSettings: const DataLabelSettings(
-                                      isVisible: true,
+                    child: Row(
+                      children: [
+                        // Chart Section
+                        Expanded(
+                          flex: 3,
+                          child: SizedBox(
+                            height: 120,
+                            child: SfCircularChart(
+                              margin: EdgeInsets.zero,
+                              series: <CircularSeries>[
+                                DoughnutSeries<ChartData, String>(
+                                  dataSource: [
+                                    ChartData(
+                                      'On Time',
+                                      _onTimeCount,
+                                      Colors.green.shade400,
                                     ),
+                                    ChartData(
+                                      'Late',
+                                      _lateCount,
+                                      Colors.orange.shade400,
+                                    ),
+                                  ],
+                                  xValueMapper: (ChartData data, _) => data.x,
+                                  yValueMapper: (ChartData data, _) => data.y,
+                                  pointColorMapper: (ChartData data, _) =>
+                                      data.color,
+                                  innerRadius: '75%',
+                                  dataLabelSettings: const DataLabelSettings(
+                                    isVisible: false,
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _legendItem(
-                                  Colors.green,
-                                  'On Time',
-                                  _onTimeCount,
                                 ),
-                                const SizedBox(height: 8),
-                                _legendItem(Colors.red, 'Late', _lateCount),
-                                const SizedBox(height: 8),
-                                _legendItem(Colors.grey, 'Total', total),
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+
+                        // Statistics Info
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildStatItem(
+                                "On Time",
+                                "$_onTimeCount",
+                                "${onTimePercentage.toStringAsFixed(1)}%",
+                                Colors.green.shade400,
+                              ),
+                              const SizedBox(height: 12),
+                              _buildStatItem(
+                                "Late",
+                                "$_lateCount",
+                                "${latePercentage.toStringAsFixed(1)}%",
+                                Colors.orange.shade400,
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  "Total: $total",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-                  // Horizontal date selector
+                  // Section Title untuk Date Selector
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      "Select Date",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Horizontal date selector yang lebih stylish
                   SizedBox(
-                    height: 80,
+                    height: 90,
                     child: ListView.builder(
                       controller: _dateScrollController,
                       scrollDirection: Axis.horizontal,
@@ -269,37 +320,95 @@ class _HistoryPageState extends State<HistoryPage> {
                             date.year == _selectedDate.year &&
                             date.month == _selectedDate.month &&
                             date.day == _selectedDate.day;
+                        final isToday =
+                            date.year == DateTime.now().year &&
+                            date.month == DateTime.now().month &&
+                            date.day == DateTime.now().day;
 
                         return GestureDetector(
                           onTap: () => _onDateTap(index, date),
                           child: Container(
-                            width: 60,
-                            margin: const EdgeInsets.only(right: 8),
+                            width: 64,
+                            margin: EdgeInsets.only(
+                              right: 8,
+                              left: index == 0 ? 4 : 0,
+                            ),
                             decoration: BoxDecoration(
-                              color: isSelected ? Colors.blue : Colors.white,
+                              gradient: isSelected
+                                  ? LinearGradient(
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.primary.withOpacity(0.8),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : isToday
+                                  ? LinearGradient(
+                                      colors: [
+                                        Colors.blue.shade50,
+                                        Colors.white,
+                                      ],
+                                    )
+                                  : null,
+                              color: isSelected || isToday
+                                  ? null
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
+                              border: isToday && !isSelected
+                                  ? Border.all(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      width: 1.5,
+                                    )
+                                  : null,
+                              boxShadow: [
+                                if (!isSelected)
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                              ],
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  DateFormat('dd').format(date),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
                                     color: isSelected
                                         ? Colors.white
-                                        : Colors.black,
+                                        : Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      DateFormat('dd').format(date),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: isSelected
+                                            ? AppColors.primary
+                                            : isToday
+                                            ? AppColors.primary
+                                            : Colors.grey.shade700,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Text(
                                   DateFormat('EEE').format(date),
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
                                     color: isSelected
                                         ? Colors.white
-                                        : Colors.black,
+                                        : isToday
+                                        ? AppColors.primary
+                                        : Colors.grey.shade600,
                                   ),
                                 ),
                               ],
@@ -310,98 +419,193 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                   ),
 
+                  const SizedBox(height: 24),
+
+                  // Section Title untuk Attendance List
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withOpacity(0.6),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Attendance Records",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          DateFormat('MMMM yyyy').format(_selectedDate),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
 
                   // Attendance List
                   Expanded(
                     child: _filteredRecords.isEmpty
-                        ? const Expanded(
-                            child: Text(
-                              "No attendance records for the selected date.",
-                              style: TextStyle(fontSize: 12),
-                              textAlign: TextAlign.center,
-                              selectionColor: Colors.grey,
-                            ),
-                          )
+                        ? _buildEmptyState()
                         : ListView.builder(
                             itemCount: _filteredRecords.length,
                             itemBuilder: (context, index) {
                               final item = _filteredRecords[index];
                               final isCheckIn = item.type == "checkin";
                               final status = _getStatus(item);
+                              final isLate = status == "Late";
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.grey.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isCheckIn
-                                            ? Colors.green.withOpacity(0.1)
-                                            : Colors.blue.withOpacity(0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        isCheckIn ? Icons.login : Icons.logout,
-                                        color: isCheckIn
-                                            ? Colors.green
-                                            : Colors.blue,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {},
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Row(
                                         children: [
-                                          Text(
-                                            isCheckIn
-                                                ? "Check In"
-                                                : "Check Out",
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
+                                          // Icon dengan gradient
+                                          Container(
+                                            padding: const EdgeInsets.all(14),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: isCheckIn
+                                                    ? [
+                                                        Colors.green.shade100,
+                                                        Colors.green.shade50,
+                                                      ]
+                                                    : [
+                                                        Colors.blue.shade100,
+                                                        Colors.blue.shade50,
+                                                      ],
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              isCheckIn
+                                                  ? Icons.login_rounded
+                                                  : Icons.logout_rounded,
+                                              color: isCheckIn
+                                                  ? Colors.green.shade600
+                                                  : Colors.blue.shade600,
+                                              size: 22,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            DateFormat('HH:mm').format(
-                                              item.time.toUtc().add(
-                                                const Duration(hours: 7),
+                                          const SizedBox(width: 16),
+
+                                          // Content
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  isCheckIn
+                                                      ? "Check In"
+                                                      : "Check Out",
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  DateFormat('HH:mm').format(
+                                                    item.time.toUtc().add(
+                                                      const Duration(hours: 7),
+                                                    ),
+                                                  ),
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+
+                                          // Status Badge
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isLate
+                                                  ? Colors.orange.shade50
+                                                  : Colors.green.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: isLate
+                                                    ? Colors.orange.shade200
+                                                    : Colors.green.shade200,
+                                                width: 1,
                                               ),
                                             ),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[600],
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  isLate
+                                                      ? Icons.schedule
+                                                      : Icons.check_circle,
+                                                  size: 14,
+                                                  color: isLate
+                                                      ? Colors.orange.shade600
+                                                      : Colors.green.shade600,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  status,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isLate
+                                                        ? Colors.orange.shade600
+                                                        : Colors.green.shade600,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    Text(
-                                      status,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: status == "Late"
-                                            ? Colors.red
-                                            : Colors.green,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               );
                             },
@@ -413,17 +617,95 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _legendItem(Color color, String text, int count) {
-    return Row(
+  Widget _buildStatItem(
+    String title,
+    String count,
+    String percentage,
+    Color color,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Text('$text: $count', style: const TextStyle(fontSize: 12)),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Text(
+              count,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              percentage,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.grey.shade100, Colors.grey.shade50],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.calendar_today,
+              size: 48,
+              color: Colors.grey.shade400,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No Records Found",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "No attendance records for the selected date",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+        ],
+      ),
     );
   }
 

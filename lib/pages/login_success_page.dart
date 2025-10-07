@@ -1,39 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
-class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
+class LoginSuccessPage extends StatefulWidget {
+  const LoginSuccessPage({super.key});
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
+  State<LoginSuccessPage> createState() => _LoginSuccessPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
+class _LoginSuccessPageState extends State<LoginSuccessPage>
+    with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _loadAnimation();
+    _navigateToDashboard();
   }
 
-  Future<void> _loadAnimation() async {
-    try {
-      // Test load animation
-      await DefaultAssetBundle.of(context).load('assets/attendance.json');
-      debugPrint('Animation loaded successfully');
-    } catch (e) {
-      debugPrint('Error loading animation: $e');
-    }
-    _checkLoginStatus();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    // Cek apakah user sudah login
+  Future<void> _navigateToDashboard() async {
     await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
-
-    // Navigate ke login page (bisa diganti dengan logic cek token)
-    Navigator.pushReplacementNamed(context, "/login");
+    Navigator.pushReplacementNamed(context, "/main");
   }
 
   @override
@@ -45,25 +32,33 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Lottie.asset(
-              'assets/attendance.json',
+              'assets/success.json',
               width: 300,
               height: 300,
               fit: BoxFit.contain,
-              repeat: true,
             ),
             const SizedBox(height: 20),
             const Text(
-              "Attendance Pro",
+              "Login Successful!",
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.blue,
               ),
             ),
             const SizedBox(height: 10),
             const Text(
-              "Manage your attendance efficiently",
+              "Welcome back to Attendance Pro",
               style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 30),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+              ),
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/login_page.dart';
+import 'pages/login_success_page.dart';
 import 'pages/main_page.dart';
 import 'pages/register_page.dart';
 import 'pages/splash_page.dart';
@@ -23,10 +24,9 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           centerTitle: true,
         ),
-        cardColor: Colors.white, // warna card
+        cardColor: Colors.white,
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor:
-            Colors.grey[100], // 🔹 background default semua page
+        scaffoldBackgroundColor: Colors.grey[100],
       ),
       debugShowCheckedModeBanner: false,
       initialRoute: "/",
@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
         "/login": (_) => const LoginPage(),
         "/register": (_) => const RegisterPage(),
         "/main": (_) => const MainPage(),
+        "/login-success": (_) => const LoginSuccessPage(), // Route baru
       },
     );
   }

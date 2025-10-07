@@ -23,8 +23,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String _companyName = "-";
   String _companyCode = "-";
   String _companyAddress = "-";
-  String _companyTimezone = "-";
-  String _workHourRange = "-";
   double? _lat;
   double? _lng;
   int? _radius;
@@ -57,13 +55,12 @@ class _ProfilePageState extends State<ProfilePage> {
       final name = (data['name'] ?? '-') as String;
       final code = (data['companyCode'] ?? '-') as String;
       final address = (data['address'] ?? '-') as String;
-      final tz = (data['timezone'] ?? '-') as String;
 
       // timeStart/timeEnd bisa ISO (contoh yang kamu pakai)
       final timeStart = data['timeStart'] ?? data['time_start'];
       final timeEnd = data['timeEnd'] ?? data['time_end'];
 
-      final range = _formatWorkHoursToLocal(timeStart, timeEnd);
+      _formatWorkHoursToLocal(timeStart, timeEnd);
 
       final loc = data['location'] as Map<String, dynamic>?;
 
@@ -71,8 +68,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _companyName = name;
         _companyCode = code;
         _companyAddress = address;
-        _companyTimezone = tz;
-        _workHourRange = range;
 
         if (loc != null) {
           _lat = (loc['latitude'] as num?)?.toDouble();
@@ -280,19 +275,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         maxLines: 2,
                       ),
                       const SizedBox(height: 12),
-                      _InfoTile(
-                        icon: Icons.schedule,
-                        label: "Working Hours",
-                        value: _workHourRange, // dari ISO -> local HH:mm
-                      ),
-                      const SizedBox(height: 12),
-                      _InfoTile(
-                        icon: Icons.public,
-                        label: "Timezone",
-                        value: _companyTimezone == '-'
-                            ? 'Device Local Time'
-                            : _companyTimezone,
-                      ),
                       if (_radius != null || _lat != null) ...[
                         const SizedBox(height: 12),
                         _InfoTile(
